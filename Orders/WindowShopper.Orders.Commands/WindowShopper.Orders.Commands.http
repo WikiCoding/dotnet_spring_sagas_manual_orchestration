@@ -1,0 +1,6 @@
+@WindowShopper.Orders.Commands_HostAddress = http://localhost:5207
+
+GET {{WindowShopper.Orders.Commands_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
