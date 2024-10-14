@@ -45,14 +45,17 @@ public class CreateOrderSaga : ICreateOrderSaga
     public async Task HandleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent, CancellationToken cancellationToken)
     {
         // save the new state of the order to the db
-        await _ordersDbContext.Orders
+        int rowsAffected = await _ordersDbContext.Orders
             .Where(order => order.OrderId == orderCancelledEvent.orderId)
-            .ExecuteUpdateAsync(order => order.SetProperty(o => o.OrderStatus, OrderStatus.CONFIRMED));
+            .ExecuteUpdateAsync(order => order.SetProperty(o => o.OrderStatus, OrderStatus.CANCELLED));
 
-        await _ordersDbContext.Sagas
+        int rowsAffected1 = await _ordersDbContext.Sagas
             .Where(saga => saga.OrderId == orderCancelledEvent.orderId)
             .ExecuteUpdateAsync(order => order.SetProperty(o => o.SagaCurrentStep, "OrderCancelled"));
 
+        Console.WriteLine($"Updated Order status result {rowsAffected}");
+        Console.WriteLine($"Updated Saga status result {rowsAffected1}");
+        
         // end of saga (we could then publish to a send order confirmed email for example)
         Console.WriteLine($"Saga finished for {orderCancelledEvent.orderId} with status: CANCELLED!");
     }

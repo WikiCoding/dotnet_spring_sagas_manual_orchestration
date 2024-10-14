@@ -44,7 +44,7 @@ public class CheckStock {
 
             Optional<Inventory> inventory = inventoryRepository.findById(checkStockCommand.getProductId());
 
-            if (inventory.isEmpty() || inventory.get().getCurrentQty() >= checkStockCommand.getOrderQty()) {
+            if (inventory.isEmpty() || inventory.get().getCurrentQty() <= checkStockCommand.getOrderQty()) {
                 produceOrderCancelledEvent(checkStockCommand, mapper);
                 return;
             }

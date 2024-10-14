@@ -27,7 +27,7 @@ public class OrderCancelledConsumer : BackgroundService, IConsumerMessageBus<Ord
         _serviceProvider = serviceProvider;
     }
 
-    public OrderCancelledEvent Consume(CancellationToken cancellationToken)
+    public OrderCancelledEvent? Consume(CancellationToken cancellationToken)
     {
         const string topic = "inventory-deduction-rejected-topic";
         _consumer.Subscribe(topic);
@@ -38,9 +38,7 @@ public class OrderCancelledConsumer : BackgroundService, IConsumerMessageBus<Ord
         {
             var msgValue = msg.Message.Value;
 
-            Console.WriteLine("received message: ", msg);
-
-            _consumer.Close();
+            Console.WriteLine("received message: " + msgValue);
 
             return JsonSerializer.Deserialize<OrderCancelledEvent>(msgValue)!;
         }
@@ -68,5 +66,7 @@ public class OrderCancelledConsumer : BackgroundService, IConsumerMessageBus<Ord
 
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
+        
+        _consumer.Close();
     }
 }

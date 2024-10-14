@@ -28,7 +28,7 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
         _serviceProvider = serviceProvider;
     }
 
-    public OrderConfirmedEvent Consume(CancellationToken cancellationToken)
+    public OrderConfirmedEvent? Consume(CancellationToken cancellationToken)
     {
         const string topic = "inventory-deducted-topic";
         _consumer.Subscribe(topic);
@@ -39,9 +39,7 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
         {
             var msgValue = msg.Message.Value;
 
-            Console.WriteLine("received message: ", msg);
-
-            _consumer.Close();
+            Console.WriteLine("received message: " + msgValue);
 
             return JsonSerializer.Deserialize<OrderConfirmedEvent>(msgValue)!;
         }
@@ -69,5 +67,7 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
 
             await Task.Delay(TimeSpan.FromSeconds(6), stoppingToken);
         }
+        
+        _consumer.Close();
     }
 }
