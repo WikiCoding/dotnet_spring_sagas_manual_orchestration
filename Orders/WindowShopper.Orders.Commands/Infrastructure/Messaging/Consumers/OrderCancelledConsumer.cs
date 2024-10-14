@@ -34,16 +34,14 @@ public class OrderCancelledConsumer : BackgroundService, IConsumerMessageBus<Ord
 
         var msg = _consumer.Consume(cancellationToken);
 
-        if (msg != null)
-        {
-            var msgValue = msg.Message.Value;
+        if (msg == null) return null;
+        
+        var msgValue = msg.Message.Value;
 
-            Console.WriteLine("received message: " + msgValue);
+        Console.WriteLine("received message: " + msgValue);
 
-            return JsonSerializer.Deserialize<OrderCancelledEvent>(msgValue)!;
-        }
+        return JsonSerializer.Deserialize<OrderCancelledEvent>(msgValue)!;
 
-        return null;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,12 +54,10 @@ public class OrderCancelledConsumer : BackgroundService, IConsumerMessageBus<Ord
 
             if (orderCancelled != null)
             {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var saga = scope.ServiceProvider.GetRequiredService<ICreateOrderSaga>();
+                using var scope = _serviceProvider.CreateScope();
+                var saga = scope.ServiceProvider.GetRequiredService<ICreateOrderSaga>();
 
-                    await saga.HandleOrderCancelledEvent(orderCancelled, stoppingToken);
-                }
+                await saga.HandleOrderCancelledEvent(orderCancelled, stoppingToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);

@@ -21,7 +21,7 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
         {
             GroupId = "Window-Shopper-Group-Id",
             BootstrapServers = _kafkaConfig.BootstrapServers,
-            AutoOffsetReset = AutoOffsetReset.Earliest,
+            AutoOffsetReset = AutoOffsetReset.Earliest
         };
 
         _consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build();
@@ -35,16 +35,14 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
 
         var msg = _consumer.Consume(cancellationToken);
 
-        if (msg != null)
-        {
-            var msgValue = msg.Message.Value;
+        if (msg == null) return null;
+        
+        var msgValue = msg.Message.Value;
 
-            Console.WriteLine("received message: " + msgValue);
+        Console.WriteLine("received message: " + msgValue);
 
-            return JsonSerializer.Deserialize<OrderConfirmedEvent>(msgValue)!;
-        }
+        return JsonSerializer.Deserialize<OrderConfirmedEvent>(msgValue)!;
 
-        return null;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -57,12 +55,10 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
 
             if (orderConfirmedEvent != null)
             {
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var saga = scope.ServiceProvider.GetRequiredService<ICreateOrderSaga>();
+                using var scope = _serviceProvider.CreateScope();
+                var saga = scope.ServiceProvider.GetRequiredService<ICreateOrderSaga>();
 
-                    await saga.HandleOrderConfirmedEvent(orderConfirmedEvent, stoppingToken);
-                }
+                await saga.HandleOrderConfirmedEvent(orderConfirmedEvent, stoppingToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(6), stoppingToken);
