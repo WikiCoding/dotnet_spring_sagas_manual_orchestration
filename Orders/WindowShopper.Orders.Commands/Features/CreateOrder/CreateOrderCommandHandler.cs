@@ -9,18 +9,19 @@ namespace WindowShopper.Orders.Commands.Features.CreateOrder;
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderCreatedEvent>
 {
     private readonly OrdersDbContext _orderRepository;
-    private readonly IMediator _mediator;
     private readonly ICreateOrderSaga _createOrderSaga;
+    private readonly ILogger<CreateOrderCommandHandler> _logger;
 
-    public CreateOrderCommandHandler(OrdersDbContext orderRepository, IMediator mediator, ICreateOrderSaga createOrderSaga)
+    public CreateOrderCommandHandler(OrdersDbContext orderRepository, ICreateOrderSaga createOrderSaga, ILogger<CreateOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
-        _mediator = mediator;
         _createOrderSaga = createOrderSaga;
+        _logger = logger;
     }
 
     public async Task<OrderCreatedEvent> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Saving order {OrderId} to the Orders Table", request.orderId);
         var orderDm = new OrderDataModel
         {
             OrderId = request.orderId,
@@ -34,6 +35,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
         var orderCreatedEvent = new OrderCreatedEvent(orderDm.OrderId, orderDm.ProductId, orderDm.OrderQty, DateTime.UtcNow);
 
+        _logger.LogInformation("From CommandHandler into the Saga");
         await _createOrderSaga.HandleOrderCreatedEvent(orderCreatedEvent, cancellationToken);
 
         return orderCreatedEvent;

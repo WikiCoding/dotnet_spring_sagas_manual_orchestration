@@ -34,4 +34,5 @@ cd opt/kafka/bin
 ./kafka-topics.sh --bootstrap-server localhost:9092 --create --topic inventory-deduction-rejected-topic
 ./kafka-topics.sh --bootstrap-server localhost:9092 --create --topic stock-created-topic
 ./kafka-topics.sh --bootstrap-server localhost:9092 --create --topic stock-updated-topic
+./kafka-topics.sh --bootstrap-server localhost:9092 --create --topic order-notifications-topic
 ```

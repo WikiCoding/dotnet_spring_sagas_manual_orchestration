@@ -12,8 +12,9 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
     private readonly IConsumer<Ignore, string> _consumer;
     private readonly KafkaConfig _kafkaConfig;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<OrderCancelledConsumer> _logger;
 
-    public OrderCompletedConsumer(KafkaConfig kafkaConfig, IServiceProvider serviceProvider)
+    public OrderCompletedConsumer(KafkaConfig kafkaConfig, IServiceProvider serviceProvider, ILogger<OrderCancelledConsumer> logger)
     {
         _kafkaConfig = kafkaConfig;
 
@@ -26,11 +27,13 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
 
         _consumer = new ConsumerBuilder<Ignore, string>(consumerConfig).Build();
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     public OrderConfirmedEvent? Consume(CancellationToken cancellationToken)
     {
         const string topic = "inventory-deducted-topic";
+        _logger.LogInformation("Subscribed to topic: {topic}", topic);
         _consumer.Subscribe(topic);
 
         var msg = _consumer.Consume(cancellationToken);
@@ -39,10 +42,9 @@ public class OrderCompletedConsumer : BackgroundService, IConsumerMessageBus<Ord
         
         var msgValue = msg.Message.Value;
 
-        Console.WriteLine("received message: " + msgValue);
+        _logger.LogWarning("Received message {msgValue} at topic {topic}", msgValue, topic);
 
         return JsonSerializer.Deserialize<OrderConfirmedEvent>(msgValue)!;
-
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

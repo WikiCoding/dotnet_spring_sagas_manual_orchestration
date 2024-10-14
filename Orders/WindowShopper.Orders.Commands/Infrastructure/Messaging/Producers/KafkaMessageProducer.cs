@@ -8,10 +8,12 @@ public class KafkaMessageProducer : IProducerMessageBus
 {
     private readonly IProducer<Null, string> _producer;
     private readonly KafkaConfig _kafkaConfig;
+    private readonly ILogger<KafkaMessageProducer> _logger;
 
-    public KafkaMessageProducer(KafkaConfig kafkaConfig)
+    public KafkaMessageProducer(KafkaConfig kafkaConfig, ILogger<KafkaMessageProducer> logger)
     {
         _kafkaConfig = kafkaConfig;
+        _logger = logger;
 
         var producerConfig = new ProducerConfig
         {
@@ -25,8 +27,8 @@ public class KafkaMessageProducer : IProducerMessageBus
     {
         var kafkaMessage = new Message<Null, string> { Value = message };
 
-        DeliveryResult<Null, string> result = await _producer.ProduceAsync(topic, kafkaMessage);
+        DeliveryResult<Null, string> result = await _producer.ProduceAsync(topic, kafkaMessage, cancellationToken);
 
-        Console.WriteLine("Message delivered to Kafka: " + result.Value);
+        _logger.LogWarning("Message: {msg} successfully delivered to Kafka: ", result.Value);
     }
 }
