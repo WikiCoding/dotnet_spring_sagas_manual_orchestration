@@ -42,6 +42,30 @@ namespace WindowShopper.Orders.Commands.Migrations
                     b.ToTable("Orders");
                 });
 
+            modelBuilder.Entity("WindowShopper.Orders.Commands.Repository.OrderEventsDataModel", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OrderStatus")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("OrderEvents");
+                });
+
             modelBuilder.Entity("WindowShopper.Orders.Commands.Repository.SagaDataModel", b =>
                 {
                     b.Property<long>("EntryId")

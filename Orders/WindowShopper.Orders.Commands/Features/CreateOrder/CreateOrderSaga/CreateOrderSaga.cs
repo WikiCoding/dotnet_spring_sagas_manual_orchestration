@@ -12,16 +12,14 @@ public class CreateOrderSaga : ICreateOrderSaga
 {
     private readonly OrdersDbContext _ordersDbContext;
     private readonly IProducerMessageBus _producerMessageBus;
-    private readonly OrderCompletedConsumer _invetoryDeductedConsumer;
 
-    public CreateOrderSaga(IProducerMessageBus producerMessageBus, OrderCompletedConsumer invetoryDeductedConsumer, OrdersDbContext ordersDbContext)
+    public CreateOrderSaga(IProducerMessageBus producerMessageBus, OrdersDbContext ordersDbContext)
     {
         _producerMessageBus = producerMessageBus;
-        _invetoryDeductedConsumer = invetoryDeductedConsumer;
         _ordersDbContext = ordersDbContext;
     }
 
-    public async Task StartSaga(Guid OrderId)
+    public async Task StartSaga(Guid OrderId, CancellationToken cancellationToken)
     {
         _ordersDbContext.Sagas.Add(new SagaDataModel
         {
@@ -29,7 +27,15 @@ public class CreateOrderSaga : ICreateOrderSaga
             OrderId = OrderId
         });
 
-        await _ordersDbContext.SaveChangesAsync();
+        _ordersDbContext.OrderEvents.Add(new OrderEventsDataModel
+        {
+            OrderId = OrderId,
+            EventName = nameof(OrderCreatedEvent),
+            OrderStatus = OrderStatus.PENDING_CONFIRMATION,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _ordersDbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task HandleOrderCreatedEvent(OrderCreatedEvent notification, CancellationToken cancellationToken)
@@ -37,24 +43,34 @@ public class CreateOrderSaga : ICreateOrderSaga
         const string topic = "order-created-topic";
         var messageStr = JsonSerializer.Serialize(notification);
 
-        await StartSaga(notification.orderId);
+        await StartSaga(notification.orderId, cancellationToken);
 
         await _producerMessageBus.ProduceAsync(topic, messageStr, cancellationToken);
     }
 
     public async Task HandleOrderCancelledEvent(OrderCancelledEvent orderCancelledEvent, CancellationToken cancellationToken)
     {
-        // save the new state of the order to the db
-        int rowsAffected = await _ordersDbContext.Orders
+        // save the new state of the order to the db and also the saga state. This should be a bulk update for best perfomance
+        await _ordersDbContext.Orders
             .Where(order => order.OrderId == orderCancelledEvent.orderId)
-            .ExecuteUpdateAsync(order => order.SetProperty(o => o.OrderStatus, OrderStatus.CANCELLED));
+            .ExecuteUpdateAsync(order => 
+                order.SetProperty(o => o.OrderStatus, OrderStatus.CANCELLED), cancellationToken);
 
-        int rowsAffected1 = await _ordersDbContext.Sagas
+        await _ordersDbContext.Sagas
             .Where(saga => saga.OrderId == orderCancelledEvent.orderId)
-            .ExecuteUpdateAsync(order => order.SetProperty(o => o.SagaCurrentStep, "OrderCancelled"));
+            .ExecuteUpdateAsync(order => 
+                order.SetProperty(o => o.SagaCurrentStep, "OrderCancelled"), cancellationToken: cancellationToken);
 
-        Console.WriteLine($"Updated Order status result {rowsAffected}");
-        Console.WriteLine($"Updated Saga status result {rowsAffected1}");
+        // for visualization purposes
+        _ordersDbContext.OrderEvents.Add(new OrderEventsDataModel
+        {
+            OrderId = orderCancelledEvent.orderId,
+            EventName = nameof(OrderCancelledEvent),
+            OrderStatus = OrderStatus.CANCELLED,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _ordersDbContext.SaveChangesAsync(cancellationToken);
         
         // end of saga (we could then publish to a send order confirmed email for example)
         Console.WriteLine($"Saga finished for {orderCancelledEvent.orderId} with status: CANCELLED!");
@@ -65,11 +81,25 @@ public class CreateOrderSaga : ICreateOrderSaga
         // save the new state of the order to the db
         await _ordersDbContext.Orders
             .Where(order => order.OrderId == orderConfirmedEvent.orderId)
-            .ExecuteUpdateAsync(order => order.SetProperty(o => o.OrderStatus, OrderStatus.CONFIRMED));
+            .ExecuteUpdateAsync(order => 
+                order.SetProperty(o => o.OrderStatus, OrderStatus.CONFIRMED), cancellationToken);
 
         await _ordersDbContext.Sagas
             .Where(saga => saga.OrderId == orderConfirmedEvent.orderId)
-            .ExecuteUpdateAsync(order => order.SetProperty(o => o.SagaCurrentStep, "OrderCompleted"));
+            .ExecuteUpdateAsync(order => 
+                order.SetProperty(o => o.SagaCurrentStep, "OrderCompleted"), cancellationToken);
+        
+        // for visualization purposes
+        _ordersDbContext.OrderEvents.Add(new OrderEventsDataModel
+        {
+            OrderId = orderConfirmedEvent.orderId,
+            EventName = nameof(OrderConfirmedEvent),
+            OrderStatus = OrderStatus.CONFIRMED,
+            CreatedAt = DateTime.UtcNow
+        });
+
+
+        _ordersDbContext.SaveChangesAsync(cancellationToken);
 
         // end of saga (we could then publish to a send order confirmed email for example)
         Console.WriteLine($"Saga finished for {orderConfirmedEvent.orderId} with status: CONFIRMED!");

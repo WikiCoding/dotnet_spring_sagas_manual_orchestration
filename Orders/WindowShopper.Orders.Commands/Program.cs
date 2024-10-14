@@ -18,8 +18,6 @@ builder.Services.AddSingleton(kafkaConfig);
 builder.Services.AddScoped<IProducerMessageBus, KafkaMessageProducer>();
 builder.Services.AddHostedService<OrderCompletedConsumer>();
 builder.Services.AddHostedService<OrderCancelledConsumer>();
-builder.Services.AddScoped<OrderCompletedConsumer>();
-builder.Services.AddScoped<OrderCancelledConsumer>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

@@ -12,7 +12,7 @@ using WindowShopper.Orders.Commands.Repository;
 namespace WindowShopper.Orders.Commands.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    [Migration("20241013180323_orders_v1")]
+    [Migration("20241014124002_orders_v1")]
     partial class orders_v1
     {
         /// <inheritdoc />
@@ -43,6 +43,30 @@ namespace WindowShopper.Orders.Commands.Migrations
                     b.HasKey("OrderId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("WindowShopper.Orders.Commands.Repository.OrderEventsDataModel", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OrderStatus")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("OrderEvents");
                 });
 
             modelBuilder.Entity("WindowShopper.Orders.Commands.Repository.SagaDataModel", b =>
