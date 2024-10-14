@@ -1,9 +1,12 @@
 package com.wikicoding.WindowShopper.Inventory.Commands.Features.UpdateStock;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wikicoding.WindowShopper.Inventory.Commands.Abstractions.IRequestHandler;
 import com.wikicoding.WindowShopper.Inventory.Commands.Features.Commands.UpdateStockCommand;
 import com.wikicoding.WindowShopper.Inventory.Commands.Features.CreateStock.CreateStockCommandHandler;
 import com.wikicoding.WindowShopper.Inventory.Commands.Features.Events.StockUpdatedEvent;
+import com.wikicoding.WindowShopper.Inventory.Commands.Infrastructure.KafkaProducer;
 import com.wikicoding.WindowShopper.Inventory.Commands.Model.Inventory;
 import com.wikicoding.WindowShopper.Inventory.Commands.Model.InventoryEvent;
 import com.wikicoding.WindowShopper.Inventory.Commands.Repository.InventoryEventRepository;
@@ -22,6 +25,7 @@ public class UpdateStockCommandHandler implements IRequestHandler<UpdateStockCom
     private final InventoryRepository inventoryRepository;
     private final InventoryEventRepository inventoryEventRepository;
     private final Logger logger = LoggerFactory.getLogger(UpdateStockCommandHandler.class);
+    private final KafkaProducer kafkaProducer;
 
     @Override
     public StockUpdatedEvent Handle(UpdateStockCommand command) {
@@ -40,6 +44,16 @@ public class UpdateStockCommandHandler implements IRequestHandler<UpdateStockCom
         StockUpdatedEvent stockUpdatedEvent = new StockUpdatedEvent(inventory.getProductId(), inventory.getCurrentQty());
         inventoryEventRepository.save(new InventoryEvent(0, "",
                 stockUpdatedEvent.getClass().getName(), LocalDateTime.now()));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String message = objectMapper.writeValueAsString(stockUpdatedEvent);
+
+            String updatedTopic = "stock-updated-topic";
+            kafkaProducer.sendMessage(updatedTopic, message);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
         return stockUpdatedEvent;
     }

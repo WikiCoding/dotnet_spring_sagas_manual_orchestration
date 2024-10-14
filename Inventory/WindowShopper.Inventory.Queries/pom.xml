@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.wikicoding.WindowShopper.Inventory</groupId>
-	<artifactId>Inventory-Commands</artifactId>
+	<artifactId>Queries</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Inventory-Commands</name>
+	<name>Queries</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -64,13 +64,7 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
-		</dependency>
-
-		<!--		visit http://localhost:8080/swagger-ui/index.html-->
+<!--		visit http://localhost:8081/swagger-ui/index.html-->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>

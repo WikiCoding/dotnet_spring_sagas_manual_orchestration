@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class StockUpdatedEvent {
     private final int productId;
-    private final int productQty;
+    private final int currentQty;
 }
