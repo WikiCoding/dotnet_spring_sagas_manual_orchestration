@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.wikicoding.WindowShopper.Inventory</groupId>
-	<artifactId>Queries</artifactId>
+	<artifactId>Inventory-Queries</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Queries</name>
+	<name>Inventory-Queries</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
